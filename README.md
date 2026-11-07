@@ -6,11 +6,12 @@ DeepSeek Harness 插件统一维护仓库。每个插件放在 `plugins/<name>/`
 
 插件在根 Agent 新建或恢复时，通过 DSH 的 `permissionPresets.set()` 选择权限模式。`DSH_SESSION_PERMISSION_PRESET` 支持原生 preset，例如 `auto`、`workspace-write`、`danger-full-access`；省略时使用 `auto`。委派子 Agent 保留 DSH 自己继承的审批策略。非法 preset 或缺失的原生 Auto integration 由 DSH 拒绝，不回退成 Full access。
 
-在 DSH 0.2.2-rc.1 环境安装本仓库的固定 Git revision：
+BB 已自动加载这份插件，使用 BB 时无需再安装到它的 ACP profile。独立使用 DSH CLI 时，在 DSH 0.2.2-rc.1 环境创建单独 profile 并安装固定 Git revision：
 
 ```sh
-dsh plugin --profile acp add 'git+https://github.com/hxy91819/dsh-plugins.git#<commit>'
-DSH_SESSION_PERMISSION_PRESET=auto dsh --profile acp
+dsh --profile standalone-auto --from-default-profile acp --dump-config
+dsh plugin --profile standalone-auto add 'https://codeload.github.com/hxy91819/dsh-plugins/tar.gz/<commit>'
+DSH_SESSION_PERMISSION_PRESET=auto dsh --profile standalone-auto
 ```
 
 根 bundle 挂载原生 Auto review 与 session-permission。已经挂载原生 Auto review 的 profile 应改用单独插入 `@hxy91819/dsh-plugins/session-permission` 的 overlay，避免重复挂载。挂载插件本身不提供 ACP 权限切换协议；外部宿主应在每次启动时设置期望模式，改变模式时重建并恢复原会话。
