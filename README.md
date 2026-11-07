@@ -1,0 +1,29 @@
+# DSH plugins
+
+DeepSeek Harness 插件统一维护仓库。每个插件放在 `plugins/<name>/`；当前包含会话权限插件 `session-permission`。原生 Auto review 的风险判定与工具执行逻辑继续由上游 `@deepseek-ai/dsh-experimental-auto-review` 提供，本仓库不复制审查器。
+
+## Session permission
+
+插件在根 Agent 新建或恢复时，通过 DSH 的 `permissionPresets.set()` 选择权限模式。`DSH_SESSION_PERMISSION_PRESET` 支持原生 preset，例如 `auto`、`workspace-write`、`danger-full-access`；省略时使用 `auto`。委派子 Agent 保留 DSH 自己继承的审批策略。非法 preset 或缺失的原生 Auto integration 由 DSH 拒绝，不回退成 Full access。
+
+在 DSH 0.2.2-rc.1 环境安装本仓库的固定 Git revision：
+
+```sh
+dsh plugin --profile acp add 'git+https://github.com/hxy91819/dsh-plugins.git#<commit>'
+DSH_SESSION_PERMISSION_PRESET=auto dsh --profile acp
+```
+
+根 bundle 挂载原生 Auto review 与 session-permission。已经挂载原生 Auto review 的 profile 应改用单独插入 `@hxy91819/dsh-plugins/session-permission` 的 overlay，避免重复挂载。挂载插件本身不提供 ACP 权限切换协议；外部宿主应在每次启动时设置期望模式，改变模式时重建并恢复原会话。
+
+BB 的接入继续维护在 [bb-plugins/plugins/provider-acp](https://github.com/hxy91819/bb-plugins/tree/main/plugins/provider-acp)，沿用 `acp-dsh`。BB 将本仓库固定到 Git commit，并从 `@hxy91819/dsh-plugins/session-permission/source` 获取由实际插件实现生成的隔离加载源码；BB 只保存部署副本，维护时只改本仓库。
+
+## 开发与交付
+
+```sh
+npm ci --ignore-scripts
+npm run check
+npm test
+npm run pack:check
+```
+
+本仓库没有运行时第三方依赖。测试同时通过正常模块和生成源码加载插件，覆盖根会话新建/恢复、各权限模式与子 Agent 不被覆盖。真实 DSH 和 BB 审批/模式切换验证由 BB 接入仓库执行；模块测试不代替真实工具执行验证。发布到 main 后检查 CI，再把需要引用新实现的宿主依赖更新到确切 Git SHA。

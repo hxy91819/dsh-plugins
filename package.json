@@ -1,0 +1,38 @@
+{
+  "name": "@hxy91819/dsh-plugins",
+  "version": "0.1.0",
+  "description": "Reusable plugins for DeepSeek Harness.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hxy91819/dsh-plugins.git"
+  },
+  "engines": {
+    "node": ">=24.9.0"
+  },
+  "exports": {
+    "./session-permission": "./plugins/session-permission/index.js",
+    "./session-permission/source": {
+      "types": "./plugins/session-permission/source.d.ts",
+      "default": "./plugins/session-permission/source.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "plugins",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check plugins/session-permission/index.js && node --check plugins/session-permission/source.js",
+    "pack:check": "npm pack --dry-run"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
