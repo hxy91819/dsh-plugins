@@ -17,7 +17,12 @@
       "types": "./plugins/session-permission/source.d.ts",
       "default": "./plugins/session-permission/source.js"
     },
-    "./cordis.patch.yml": "./cordis.patch.yml"
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./acp-steering": "./plugins/acp-steering/index.js",
+    "./acp-steering/source": {
+      "types": "./plugins/acp-steering/source.d.ts",
+      "default": "./plugins/acp-steering/source.js"
+    }
   },
   "files": [
     "plugins",
@@ -27,7 +32,7 @@
   ],
   "scripts": {
     "test": "node --test",
-    "check": "node --check plugins/session-permission/index.js && node --check plugins/session-permission/source.js",
+    "check": "node --check plugins/session-permission/index.js && node --check plugins/session-permission/source.js && node --check plugins/acp-steering/index.js && node --check plugins/acp-steering/source.js",
     "pack:check": "npm pack --dry-run"
   },
   "dsh": {
