@@ -38,3 +38,5 @@ npm run pack:check
 插件只向运行中的根 Agent 投递；Agent 已空闲时返回未接受，由宿主作为普通下一轮提交。取消也走同一有序管道。宿主必须在官方 ACP 结算后确认消息已被实际 claim，不能把入队回执直接当成投递完成。私有管道关闭时宿主停止对应 DSH 进程；插件卸载释放通道和监听器。通道要求 `DSH_ACP_STEERING_FD=3`，适用于 Linux/macOS，不开放网络端口。
 
 BB 接入维护在 [bb-plugins/plugins/acp-compat](https://github.com/hxy91819/bb-plugins/tree/main/plugins/acp-compat)，沿用 `acp-dsh` provider。它通过固定 revision 的 `@hxy91819/dsh-plugins/acp-steering/source` 部署本插件，不需要 DSH 的 `fix/acp-mid-turn-steering` 补丁。纯文本 steering 由插件处理；图片等内容仍使用宿主的 interrupt 投递。单元测试同时检查模块与隔离源码，真实 DSH 同轮消费和取消恢复测试由 BB 接入仓库执行。
+
+修改 `acp-steering/index.js` 后运行 `npm run generate` 更新隔离源码；`npm run check` 核对生成结果。隔离源码以字符串常量打包，避免宿主压缩变量名改变被部署插件中的引用。
