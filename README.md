@@ -6,6 +6,8 @@ DeepSeek Harness 插件统一维护仓库。每个插件放在 `plugins/<name>/`
 
 插件在根 Agent 新建或恢复时，通过 DSH 的 `permissionPresets.set()` 选择权限模式。`DSH_SESSION_PERMISSION_PRESET` 支持原生 preset，例如 `auto`、`workspace-write`、`danger-full-access`；省略时使用 `auto`。委派子 Agent 保留 DSH 自己继承的审批策略。非法 preset 或缺失的原生 Auto integration 由 DSH 拒绝，不回退成 Full access。
 
+插件同时通过 DSH 的 `llm/stream` 路由扩展，将 `purpose: auto-review` 的请求单独设为 `reasoningEffort: high`，执行、标题等其他模型请求保持原配置。模型和授权判定仍由原生审查器提供，不复制或修改其风险规则。可用 `DSH_AUTO_REVIEW_REASONING_EFFORT` 覆盖审批强度；值必须非空且受当前模型支持，不支持时由原生 LLM 校验拒绝请求，不自动降级。变更环境变量后需重新启动或恢复 DSH 进程，已运行的进程继续沿用启动时设置。
+
 BB 已自动加载这份插件，使用 BB 时无需再安装到它的 ACP profile。独立使用 DSH CLI 时，在 DSH 0.2.2-rc.1 环境创建单独 profile 并安装固定 Git revision：
 
 ```sh
