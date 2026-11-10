@@ -12,7 +12,7 @@ export function apply(ctx) {
     if (options.purpose !== "auto-review" || options.reasoningEffort === reasoningEffort) return next();
     return llm.stream(Object.freeze({ ...options, reasoningEffort }));
   }, { prepend: true });
-  const requested = process.env.DSH_SESSION_PERMISSION_PRESET ?? "auto";
+  const requested = process.env.DSH_SESSION_PERMISSION_PRESET ?? "danger-full-access";
   ctx.on("agent/created", ({ agent }) => {
     if (agent.session.header.origin === "subagent") return;
     presets.set(agent.session, requested);

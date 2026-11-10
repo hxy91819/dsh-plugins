@@ -6,7 +6,7 @@ import { selectorSource } from "../plugins/session-permission/source.js";
 const generated = await import("data:text/javascript;base64," + Buffer.from(selectorSource).toString("base64"));
 for (const [surface, plugin] of [["module", direct], ["isolated source", generated]]) {
   for (const requested of [undefined, "auto", "danger-full-access", "workspace-write"]) {
-    test(`${surface}: root creation and resume select ${requested ?? "default auto"}; children retain their own policy`, () => {
+    test(`${surface}: root creation and resume select ${requested ?? "default full access"}; children retain their own policy`, () => {
       const original = process.env.DSH_SESSION_PERMISSION_PRESET;
       if (requested === undefined) delete process.env.DSH_SESSION_PERMISSION_PRESET;
       else process.env.DSH_SESSION_PERMISSION_PRESET = requested;
@@ -22,7 +22,7 @@ for (const [surface, plugin] of [["module", direct], ["isolated source", generat
         created({ agent: { session: fresh } });
         created({ agent: { session: resumed } });
         created({ agent: { session: { header: { origin: "subagent" } } } });
-        assert.deepEqual(selected, [[fresh, requested ?? "auto"], [resumed, requested ?? "auto"]]);
+        assert.deepEqual(selected, [[fresh, requested ?? "danger-full-access"], [resumed, requested ?? "danger-full-access"]]);
       } finally {
         if (original === undefined) delete process.env.DSH_SESSION_PERMISSION_PRESET;
         else process.env.DSH_SESSION_PERMISSION_PRESET = original;
