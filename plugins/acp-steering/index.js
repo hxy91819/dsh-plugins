@@ -10,6 +10,13 @@ export function attach(ctx, channel) {
   const send = (message) => channel.write(JSON.stringify({ jsonrpc: "2.0", ...message }) + "\n");
   const lines = createInterface({ input: channel });
   const fail = (id, code, message) => send({ id, error: { code, message } });
+  ctx.on("session/event", (session, event) => {
+    if (event.type !== "agent/inbox/spliced" || event.data.target !== "next-turn") return;
+    for (const message of event.data.inserted) {
+      if (message.source.kind !== "user" || !message.content.every((block) => block.type === "text")) continue;
+      send({ method: "enqueued", params: { sessionId: session.id, messageId: message.id, text: message.content.map((block) => block.text).join("") } });
+    }
+  });
   ctx.on("agent/inbox/claimed", ({ agent, message }) => {
     if (agent.session.header.origin !== "subagent") send({ method: "claimed", params: { sessionId: agent.session.id, messageId: message.id } });
   });

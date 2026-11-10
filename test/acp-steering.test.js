@@ -13,8 +13,12 @@ for (const [name, plugin] of [["module", direct], ["isolated source", generated]
     plugin.attach({ agents: { get(id) { return id === "s" ? agent : undefined; } }, on(event, handler) { listeners[event] = handler; }, effect(factory) { disposed = factory(); } }, channel);
     const send = (id, prompt, sessionId = "s") => channel.emit("data", JSON.stringify({ jsonrpc: "2.0", id, method: "steer", params: { sessionId, prompt } }) + "\n");
     assert.equal(output[0].method, "ready");
+    const original = { id: "original", source: { kind: "user" }, content: [{ type: "text", text: "first" }] };
+    listeners["session/event"](agent.session, { type: "agent/inbox/spliced", data: { target: "next-turn", inserted: [original, { ...original, source: { kind: "goal" } }] } });
+    assert.deepEqual(output.at(-1).params, { sessionId: "s", messageId: "original", text: "first" });
+    assert.equal(output.filter((message) => message.method === "enqueued").length, 1);
     listeners["agent/inbox/claimed"]({ agent, message: { id: "original" } });
-    assert.equal(output[1].method, "claimed");
+    assert.equal(output.at(-1).method, "claimed");
     send(1, [{ type: "text", text: "change " }, { type: "text", text: "direction" }]);
     assert.equal(output.at(-1).result.accepted, true);
     assert.equal(received[0].content[0].text, "change direction");
