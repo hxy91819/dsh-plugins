@@ -35,7 +35,7 @@ npm run pack:check
 
 `acp-steering` 是供宿主集成使用的插件，由 BB 的 `acp-compat` DSH adapter 自动部署到独立临时 overlay；不要再把它挂到普通 profile。它通过继承的私有双向管道接收纯文本消息，使用原生 `agent.steer()` 进入持久 inbox，并返回入队与消费回执。普通 ACP 请求、模型路由、工具、输出、后代等待及最终结算仍由官方 ACP 插件处理，不替换整个 ACP 实现。
 
-插件只向运行中的根 Agent 投递；Agent 已空闲时返回未接受，由宿主作为普通下一轮提交。取消也走同一有序管道。宿主按新入队普通用户消息的文本和身份关联当前 prompt，等待该消息实际 claim 后才开放 steering，避免恢复 inbox 或 goal 消息提前放行；非纯文本主提示词使用 interrupt 回退。宿主必须在官方 ACP 结算后确认 steering 已被实际 claim，不能把入队回执直接当成投递完成。私有管道关闭时宿主停止对应 DSH 进程；插件卸载释放通道和监听器。通道要求 `DSH_ACP_STEERING_FD=3`，适用于 Linux/macOS，不开放网络端口。
+插件只向运行中的根 Agent 投递；Agent 已空闲时返回未接受，由宿主作为普通下一轮提交。取消也走同一有序管道。宿主按新入队普通用户消息的文本和身份关联当前 prompt，等待该消息实际 claim 后才开放 steering，避免恢复 inbox 或 goal 消息提前放行；非纯文本主提示词使用 interrupt 回退。宿主必须在官方 ACP 结算后确认 steering 已被实际 claim，不能把入队回执直接当成投递完成。尚未消费的 steering 在结算前通过原生 inbox.remove 移除并报告失败，避免 BB 误记已送达或下一轮重复执行；用户主动取消仍返回 cancelled。私有管道关闭时宿主停止对应 DSH 进程；插件卸载释放通道和监听器。通道要求 `DSH_ACP_STEERING_FD=3`，适用于 Linux/macOS，不开放网络端口。
 
 BB 接入维护在 [bb-plugins/plugins/acp-compat](https://github.com/hxy91819/bb-plugins/tree/main/plugins/acp-compat)，沿用 `acp-dsh` provider。它通过固定 revision 的 `@hxy91819/dsh-plugins/acp-steering/source` 部署本插件，不需要 DSH 的 `fix/acp-mid-turn-steering` 补丁。纯文本 steering 由插件处理；图片等内容仍使用宿主的 interrupt 投递。单元测试同时检查模块与隔离源码，真实 DSH 同轮消费和取消恢复测试由 BB 接入仓库执行。
 

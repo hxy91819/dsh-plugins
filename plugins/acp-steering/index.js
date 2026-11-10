@@ -7,8 +7,10 @@ export const inject = ["agents"];
 
 export function attach(ctx, channel) {
   const agents = ctx.agents;
+  const pending = new Map();
   const send = (message) => channel.write(JSON.stringify({ jsonrpc: "2.0", ...message }) + "\n");
   const lines = createInterface({ input: channel });
+  lines.on("error", () => lines.close());
   const fail = (id, code, message) => send({ id, error: { code, message } });
   ctx.on("session/event", (session, event) => {
     if (event.type !== "agent/inbox/spliced" || event.data.target !== "next-turn") return;
@@ -17,7 +19,9 @@ export function attach(ctx, channel) {
       send({ method: "enqueued", params: { sessionId: session.id, messageId: message.id, text: message.content.map((block) => block.text).join("") } });
     }
   });
+  ctx.on("agent/inbox/discarded", ({ message }) => pending.delete(message.id));
   ctx.on("agent/inbox/claimed", ({ agent, message }) => {
+    pending.delete(message.id);
     if (agent.session.header.origin !== "subagent") send({ method: "claimed", params: { sessionId: agent.session.id, messageId: message.id } });
   });
   lines.on("line", (line) => {
@@ -25,7 +29,16 @@ export function attach(ctx, channel) {
     try { request = JSON.parse(line); } catch { return; }
     if (!request || request.jsonrpc !== "2.0" || !request.params || typeof request.params.sessionId !== "string") return;
     if (request.method === "settle") {
-      send({ method: "settled", params: { sessionId: request.params.sessionId } });
+      try {
+        for (const [id, owner] of pending) {
+          if (owner.session.id !== request.params.sessionId) continue;
+          owner.inbox.remove(id);
+          pending.delete(id);
+        }
+        send({ method: "settled", params: { sessionId: request.params.sessionId } });
+      } catch (error) {
+        channel.destroy(new Error("Could not discard unconsumed steering input; its queued state is unknown", { cause: error }));
+      }
       return;
     }
     const agent = agents.get(request.params.sessionId);
@@ -50,12 +63,13 @@ export function attach(ctx, channel) {
     try {
       const message = Object.freeze({ id: randomUUID(), role: "user", content: Object.freeze([Object.freeze({ type: "text", text: prompt.map((block) => block.text).join("") })]), source: Object.freeze({ kind: "user" }) });
       agent.steer(message);
+      pending.set(message.id, agent);
       send({ id: request.id, result: { accepted: true, messageId: message.id } });
     } catch (error) {
       fail(request.id, -32000, error instanceof Error ? error.message : String(error));
     }
   });
-  const dispose = () => { lines.close(); channel.destroy(); };
+  const dispose = () => { pending.clear(); lines.close(); channel.destroy(); };
   ctx.effect(() => dispose);
   send({ method: "ready" });
 }
